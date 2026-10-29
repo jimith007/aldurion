@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { WebSocketServer } from "ws";
 import { randomBytes, timingSafeEqual } from "node:crypto";
+import { compileScenario, getScenario, listScenarios, saveScenario } from "./scenarios.js";
 import { nextRun } from "./cron.js";
 import { getSetting, setSetting, type Db } from "./db.js";
 import type { Runner } from "./runner.js";
@@ -28,17 +29,26 @@ export function createGateway(db: Db, runner: Runner, token: string) {
       if (p === "/settings" && m === "PUT") {
         const b = await body(req);
         for (const k of ["baseURL", "apiKey", "model", "ntfyUrl", "confirmMode", "adblock", "egressAllow", "egressDeny", "offlineBaseURL", "offlineModel"]) if (typeof b[k] === "string") setSetting(db, k, b[k]);
+        if (b.apiVars && typeof b.apiVars === "object") setSetting(db, "apiVars", JSON.stringify(b.apiVars));
         if (Array.isArray(b.mcpServers)) setSetting(db, "mcpServers", JSON.stringify(b.mcpServers));
         return send(res, 200, { ok: true });
       }
       if (p === "/settings" && m === "GET") {
         const key = getSetting(db, "apiKey");
-        return send(res, 200, { baseURL: getSetting(db, "baseURL"), model: getSetting(db, "model"), apiKey: key ? `...${key.slice(-4)}` : null, ntfyUrl: getSetting(db, "ntfyUrl"), confirmMode: getSetting(db, "confirmMode") ?? "sensitive", adblock: getSetting(db, "adblock") ?? "on", egressAllow: getSetting(db, "egressAllow"), egressDeny: getSetting(db, "egressDeny"), offlineBaseURL: getSetting(db, "offlineBaseURL"), offlineModel: getSetting(db, "offlineModel"), mcpServers: JSON.parse(getSetting(db, "mcpServers") ?? "[]") });
+        return send(res, 200, { baseURL: getSetting(db, "baseURL"), model: getSetting(db, "model"), apiKey: key ? `...${key.slice(-4)}` : null, ntfyUrl: getSetting(db, "ntfyUrl"), confirmMode: getSetting(db, "confirmMode") ?? "sensitive", adblock: getSetting(db, "adblock") ?? "on", egressAllow: getSetting(db, "egressAllow"), egressDeny: getSetting(db, "egressDeny"), offlineBaseURL: getSetting(db, "offlineBaseURL"), offlineModel: getSetting(db, "offlineModel"), apiVars: Object.keys(JSON.parse(getSetting(db, "apiVars") ?? "{}")), mcpServers: JSON.parse(getSetting(db, "mcpServers") ?? "[]") });
       }
-      if (p === "/runs" && m === "POST") { const b = await body(req); return send(res, 200, { id: runner.start(b.task, undefined, b.mode === "code" ? "code" : b.mode === "qa" ? "qa" : "browser", b.language) }); }
+      if (p === "/runs" && m === "POST") { const b = await body(req); return send(res, 200, { id: runner.start(b.task, undefined, b.mode === "code" ? "code" : b.mode === "qa" ? "qa" : b.mode === "api" ? "api" : "browser", b.language) }); }
       if (p === "/runs" && m === "GET") return send(res, 200, db.prepare("SELECT id,job_id,task,status,started,finished,result FROM runs ORDER BY id DESC LIMIT 50").all());
       const run = p.match(/^\/runs\/(\d+)$/);
       if (run && m === "GET") { const r = db.prepare("SELECT * FROM runs WHERE id=?").get(Number(run[1])); return r ? send(res, 200, r) : send(res, 404, {}); }
+
+      if (p === "/scenarios" && m === "GET") return send(res, 200, listScenarios(db));
+      if (p === "/scenarios" && m === "POST") return send(res, 200, { id: saveScenario(db, await body(req)) });
+      const sc = p.match(/^\/scenarios\/(\d+)(\/run)?$/);
+      if (sc && m === "GET") { const x = getScenario(db, Number(sc[1])); return x ? send(res, 200, { ...x, compiled: compileScenario(x) }) : send(res, 404, {}); }
+      if (sc && m === "PUT") return send(res, 200, { id: saveScenario(db, await body(req), Number(sc[1])) });
+      if (sc && m === "DELETE") { db.prepare("DELETE FROM scenarios WHERE id=?").run(Number(sc[1])); return send(res, 200, { ok: true }); }
+      if (sc && sc[2] && m === "POST") return getScenario(db, Number(sc[1])) ? send(res, 200, { id: runner.start(`scenario:${sc[1]}`) }) : send(res, 404, {});
 
       if (p === "/jobs" && m === "POST") {
         const b = await body(req);

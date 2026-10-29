@@ -11,6 +11,7 @@ export function openDb(file = join(HOME, "aldurion.db")) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY, name TEXT NOT NULL, task TEXT NOT NULL, cron TEXT NOT NULL, next_run INTEGER NOT NULL, enabled INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE IF NOT EXISTS scenarios (id INTEGER PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, target TEXT NOT NULL DEFAULT '', steps TEXT NOT NULL, expect TEXT NOT NULL DEFAULT '', updated INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS runs (id INTEGER PRIMARY KEY, job_id INTEGER, task TEXT NOT NULL, status TEXT NOT NULL, started INTEGER NOT NULL, finished INTEGER, result TEXT, events TEXT NOT NULL DEFAULT '[]');
   `);
   try { chmodSync(file, 0o600); } catch {}

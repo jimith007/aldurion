@@ -13,6 +13,7 @@ Open source (MIT) agentic browser and coding platform. Bring your own LLM key an
 | `offline` | SQLite full-text page cache, cache-backed navigate and search | unit |
 | `sandbox` | per-task Docker sandbox for any language (`sh`, `write_file`, `read_file`) | node image |
 | `qa` | exploratory testing mode: charter prompt, `check_page` auto-audit, `report_bug`, markdown report | planted-bug site + mock LLM |
+| `api` | Postman-style API testing: `http_request` with assertions, variable chaining, Postman v2.1 import, markdown report | local API + mock LLM |
 | `gateway` | HTTP + WebSocket API, cron scheduler, run history, ntfy push, human handoff | end to end |
 | `apps/mobile` | Expo app: run tasks, live browser view, tap/type to clear CAPTCHA and 2FA | **not run on a device yet** |
 | `apps/code` | OpenVSCode Server compose file | **not run yet** |
@@ -32,6 +33,10 @@ Any OpenAI-compatible endpoint works (OpenRouter, Ollama, vLLM). Set `offlineBas
 
 ## Exploratory testing
 `{"task":"Test https://example.com A to Z","mode":"qa"}` runs the agent with a QA charter. It maps the site, audits every page (broken images and links, labels, console errors, failed requests, overflow), exercises forms, tries phone and desktop viewports, and writes `~/.aldurion/reports/run-N/report.md` with screenshots. The automated audit is tested; how well a real LLM explores depends on the model you plug in.
+
+## Custom scenarios and API testing
+Users write and edit their own tests as plain-English steps: `POST/PUT/GET/DELETE /scenarios` with `{name, kind: "web"|"api", target, steps, expect}`. Run one with `POST /scenarios/:id/run`, or schedule it with a job whose task is `scenario:<id>`.
+API tests replace Postman: give the agent a body, a Postman collection or just a description, and it sends the requests, asserts on status, JSON fields and latency, chains values between calls and writes `api-report.md`. Keep secrets out of prompts: set them once with `PUT /settings {"apiVars":{"token":"..."}}` and use `{{token}}` in requests. Postman `pm.test` scripts are not executed. Mac-only desktop apps cannot be driven from a browser; web versions of tools can, in normal browser mode.
 
 ## Security notes
 Shield reduces risk, it cannot guarantee that data never leaks. The gateway binds to 127.0.0.1 by default; put it behind TLS before exposing it. The LLM key is stored in `~/.aldurion/aldurion.db` (mode 0600), not encrypted.
