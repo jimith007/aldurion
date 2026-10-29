@@ -1,5 +1,5 @@
 {
-  "name": "agentic-browser",
+  "name": "aldurion",
   "private": true,
   "license": "MIT",
   "workspaces": ["packages/*"],

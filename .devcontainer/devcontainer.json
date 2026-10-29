@@ -1,5 +1,5 @@
 {
-  "name": "agentic-browser",
+  "name": "aldurion",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
   "features": { "ghcr.io/devcontainers/features/desktop-lite:1": {} },
   "forwardPorts": [6080, 9222],

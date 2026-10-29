@@ -1,4 +1,4 @@
-# agentic-browser
+# Aldurion
 
 Open source (MIT) agentic browser toolkit. Bring your own LLM provider and MCP servers.
 

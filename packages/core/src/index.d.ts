@@ -1,4 +1,4 @@
-import type { AgentBrowser } from "@agentic-browser/browser";
+import type { AgentBrowser } from "@aldurion/browser";
 export type Msg = {
     role: "system" | "user" | "assistant" | "tool";
     content: string;
