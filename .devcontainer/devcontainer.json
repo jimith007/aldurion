@@ -1,0 +1,8 @@
+{
+  "name": "agentic-browser",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24",
+  "features": { "ghcr.io/devcontainers/features/desktop-lite:1": {} },
+  "forwardPorts": [6080, 9222],
+  "portsAttributes": { "6080": { "label": "noVNC desktop" }, "9222": { "label": "Chromium CDP" } },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y chromium && npm install"
+}

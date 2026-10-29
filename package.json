@@ -1,0 +1,8 @@
+{
+  "name": "agentic-browser",
+  "private": true,
+  "license": "MIT",
+  "workspaces": ["packages/*"],
+  "scripts": { "build": "tsc -b packages/browser packages/core", "typecheck": "tsc -b packages/browser packages/core --noEmit false" },
+  "devDependencies": { "typescript": "^5.6.0", "@types/node": "^24.0.0" }
+}
