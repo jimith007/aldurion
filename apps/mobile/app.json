@@ -1,0 +1,1 @@
+{ "expo": { "name": "Aldurion", "slug": "aldurion", "scheme": "aldurion", "version": "0.0.1", "ios": { "bundleIdentifier": "dev.aldurion.app" }, "android": { "package": "dev.aldurion.app" } } }

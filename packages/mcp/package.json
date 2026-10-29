@@ -1,0 +1,2 @@
+{ "name": "@aldurion/mcp", "version": "0.0.1", "license": "MIT", "type": "module", "main": "dist/index.js", "types": "dist/index.d.ts",
+  "dependencies": { "@aldurion/core": "0.0.1", "@modelcontextprotocol/sdk": "^1.32.0" } }

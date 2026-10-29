@@ -1,0 +1,7 @@
+services:
+  ide:
+    image: gitpod/openvscode-server:latest
+    ports: ["3000:3000"]
+    volumes: ["workspace:/home/workspace"]
+volumes:
+  workspace:

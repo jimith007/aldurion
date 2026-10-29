@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../browser"
+    },
+    {
+      "path": "../mcp"
+    },
+    {
+      "path": "../scraper"
+    },
+    {
+      "path": "../shield"
+    },
+    {
+      "path": "../offline"
+    },
+    {
+      "path": "../sandbox"
+    }
+  ]
+}

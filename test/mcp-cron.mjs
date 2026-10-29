@@ -1,0 +1,14 @@
+import assert from "node:assert";
+import { McpManager } from "../packages/mcp/dist/index.js";
+import { nextRun, parseCron } from "../packages/gateway/dist/cron.js";
+const m = new McpManager();
+await m.add({ name: "demo", command: "node", args: ["test/mcp-server.mjs"] });
+const tools = await m.tools();
+assert.equal(tools[0].name, "demo__add");
+assert.equal(await tools[0].run({ a: 2, b: 3 }), "5");
+await m.close();
+const from = new Date(2026, 0, 1, 10, 7);
+assert.equal(new Date(nextRun("*/15 * * * *", from)).getMinutes(), 15);
+assert.equal(new Date(nextRun("0 9 * * 1-5", from)).getHours(), 9);
+assert.throws(() => parseCron("* * *"));
+console.log("mcp+cron ok");
