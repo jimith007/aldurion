@@ -15,7 +15,8 @@
     "ws": "^8.18.0",
     "@aldurion/shield": "0.0.1",
     "@aldurion/offline": "0.0.1",
-    "@aldurion/sandbox": "0.0.1"
+    "@aldurion/sandbox": "0.0.1",
+    "@aldurion/qa": "0.0.1"
   },
   "devDependencies": {
     "@types/ws": "^8.5.0"

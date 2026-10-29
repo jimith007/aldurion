@@ -35,7 +35,7 @@ export function createGateway(db: Db, runner: Runner, token: string) {
         const key = getSetting(db, "apiKey");
         return send(res, 200, { baseURL: getSetting(db, "baseURL"), model: getSetting(db, "model"), apiKey: key ? `...${key.slice(-4)}` : null, ntfyUrl: getSetting(db, "ntfyUrl"), confirmMode: getSetting(db, "confirmMode") ?? "sensitive", adblock: getSetting(db, "adblock") ?? "on", egressAllow: getSetting(db, "egressAllow"), egressDeny: getSetting(db, "egressDeny"), offlineBaseURL: getSetting(db, "offlineBaseURL"), offlineModel: getSetting(db, "offlineModel"), mcpServers: JSON.parse(getSetting(db, "mcpServers") ?? "[]") });
       }
-      if (p === "/runs" && m === "POST") { const b = await body(req); return send(res, 200, { id: runner.start(b.task, undefined, b.mode === "code" ? "code" : "browser", b.language) }); }
+      if (p === "/runs" && m === "POST") { const b = await body(req); return send(res, 200, { id: runner.start(b.task, undefined, b.mode === "code" ? "code" : b.mode === "qa" ? "qa" : "browser", b.language) }); }
       if (p === "/runs" && m === "GET") return send(res, 200, db.prepare("SELECT id,job_id,task,status,started,finished,result FROM runs ORDER BY id DESC LIMIT 50").all());
       const run = p.match(/^\/runs\/(\d+)$/);
       if (run && m === "GET") { const r = db.prepare("SELECT * FROM runs WHERE id=?").get(Number(run[1])); return r ? send(res, 200, r) : send(res, 404, {}); }

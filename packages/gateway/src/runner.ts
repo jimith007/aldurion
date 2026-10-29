@@ -3,6 +3,7 @@ import { AgentBrowser } from "@aldurion/browser";
 import { FallbackProvider, OpenAICompatible, browserTools, humanTool, runAgent, type HumanKind, type ToolDef } from "@aldurion/core";
 import { PageCache, cachingTools, offlineTools } from "@aldurion/offline";
 import { Sandbox, sandboxTools } from "@aldurion/sandbox";
+import { QA_PROMPT, QaReport, qaTools } from "@aldurion/qa";
 import { EgressPolicy, guardTools } from "@aldurion/shield";
 import { join } from "node:path";
 import { McpManager, type McpServerConfig } from "@aldurion/mcp";
@@ -41,14 +42,14 @@ export class Runner extends EventEmitter {
     return url ? new Ntfy(url) : new NoopNotifier();
   }
 
-  start(task: string, jobId?: number, mode: "browser" | "code" = "browser", language = "nix"): number {
+  start(task: string, jobId?: number, mode: "browser" | "code" | "qa" = "browser", language = "nix"): number {
     const started = Date.now();
     const id = Number(this.db.prepare("INSERT INTO runs(job_id,task,status,started) VALUES(?,?,?,?)").run(jobId ?? null, task, "running", started).lastInsertRowid);
     void this.execute(id, task, mode, language);
     return id;
   }
 
-  private async execute(runId: number, task: string, mode: "browser" | "code", language: string) {
+  private async execute(runId: number, task: string, mode: "browser" | "code" | "qa", language: string) {
     const events: unknown[] = [];
     const emit = (e: object) => { events.push(e); this.emit("event", { runId, ...e }); };
     const mcp = new McpManager();
@@ -58,7 +59,7 @@ export class Runner extends EventEmitter {
     try {
       const baseURL = getSetting(this.db, "baseURL"), apiKey = getSetting(this.db, "apiKey"), model = getSetting(this.db, "model");
       if (!baseURL || !apiKey || !model) throw new Error("LLM not configured: PUT /settings with baseURL, apiKey, model");
-      if (mode === "browser") {
+      if (mode !== "code") {
         browser = await this.launchBrowser();
         this.browsers.set(runId, browser);
         if (getSetting(this.db, "adblock") !== "off") await browser.blockAds();
@@ -87,12 +88,14 @@ export class Runner extends EventEmitter {
       const base: ToolDef[] = browser
         ? [...cachingTools([...browserTools(browser), ...scraperTools(browser)], this.cache, { url: () => browser!.url(), title: () => browser!.title(), text: () => browser!.text(), mhtml: () => browser!.mhtml() }), ...offlineTools(this.cache)]
         : sandboxTools(sandbox!);
-      const tools = [...guardTools([...base, ...(await mcp.tools())], { egress, onAlert: alert }), humanTool({ ask })];
+      const report = new QaReport();
+      const qa = mode === "qa" ? qaTools(browser!, report, join(HOME, "reports", `run-${runId}`)) : [];
+      const tools = [...guardTools([...base, ...qa, ...(await mcp.tools())], { egress, onAlert: alert }), humanTool({ ask })];
       const primary = new OpenAICompatible({ baseURL, apiKey, model });
       const localURL = getSetting(this.db, "offlineBaseURL"), localModel = getSetting(this.db, "offlineModel");
       const provider = localURL && localModel ? new FallbackProvider(primary, new OpenAICompatible({ baseURL: localURL, apiKey: "local", model: localModel }), (e) => emit({ type: "text", text: `offline, using local model (${e.message})` })) : primary;
       const confirm = getSetting(this.db, "confirmMode") === "never" ? undefined : async (c: { name: string; args: unknown }) => (await ask("approve", `Allow ${c.name} ${JSON.stringify(c.args).slice(0, 200)}?`)).resolved;
-      result = await runAgent({ provider, tools, task, confirm, onEvent: emit });
+      result = await runAgent({ provider, tools, task, confirm, onEvent: emit, system: mode === "qa" ? QA_PROMPT : undefined });
     } catch (e) {
       status = "error";
       result = (e as Error).message;

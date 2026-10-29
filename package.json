@@ -3,7 +3,7 @@
   "private": true,
   "license": "MIT",
   "workspaces": ["packages/*"],
-  "scripts": { "test": "node test/mcp-cron.mjs && node test/e2e.mjs && node test/shield-offline.mjs && node test/sandbox.mjs",
-    "build": "tsc -b packages/browser packages/core packages/mcp packages/scraper packages/gateway packages/sandbox packages/shield packages/offline", "typecheck": "tsc -b packages/browser packages/core packages/mcp packages/scraper packages/gateway --noEmit false" },
+  "scripts": { "test": "node test/mcp-cron.mjs && node test/e2e.mjs && node test/shield-offline.mjs && node test/qa.mjs && node test/sandbox.mjs",
+    "build": "tsc -b packages/browser packages/core packages/mcp packages/scraper packages/gateway packages/sandbox packages/shield packages/offline packages/qa", "typecheck": "tsc -b packages/browser packages/core packages/mcp packages/scraper packages/gateway --noEmit false" },
   "devDependencies": { "typescript": "^5.6.0", "@types/node": "^24.0.0" }
 }

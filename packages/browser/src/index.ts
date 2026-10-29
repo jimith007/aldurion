@@ -6,7 +6,34 @@ const INTERACTIVE = new Set(["button", "link", "textbox", "searchbox", "combobox
 export { AD_HOSTS, loadHostsList } from "./adblock.js";
 
 export class AgentBrowser {
-  private constructor(private browser: Browser, private page: Page, private cdp: CDPSession, private refs = new Map<number, number>()) {}
+  private issues: { kind: "console" | "pageerror" | "http" | "requestfailed"; detail: string; url: string }[] = [];
+  private constructor(private browser: Browser, private page: Page, private cdp: CDPSession, private refs = new Map<number, number>()) {
+    page.on("console", (m) => { if (m.type() === "error" || m.type() === "warn") this.issues.push({ kind: "console", detail: `${m.type()}: ${m.text()}`.slice(0, 300), url: page.url() }); });
+    page.on("pageerror", (e) => this.issues.push({ kind: "pageerror", detail: String((e as Error).message ?? e).slice(0, 300), url: page.url() }));
+    page.on("response", (r) => { if (r.status() >= 400) this.issues.push({ kind: "http", detail: `${r.status()} ${r.request().method()} ${r.url()}`.slice(0, 300), url: page.url() }); });
+    page.on("requestfailed", (r) => { const f = r.failure()?.errorText ?? ""; if (!f.includes("BLOCKED_BY_CLIENT") && !f.includes("ABORTED")) this.issues.push({ kind: "requestfailed", detail: `${f} ${r.url()}`.slice(0, 300), url: page.url() }); });
+  }
+
+  /** Console errors, uncaught exceptions and failed requests seen since the last call. */
+  drainIssues() {
+    return this.issues.splice(0);
+  }
+
+  evalExpr(expr: string) {
+    return this.page.evaluate(expr);
+  }
+
+  async setViewport(width: number, height: number) {
+    await this.page.setViewport({ width, height });
+  }
+
+  async screenshotFile(path: string) {
+    await this.page.screenshot({ path: path as `${string}.png`, fullPage: true });
+  }
+
+  back() {
+    return this.page.goBack({ waitUntil: "domcontentloaded" });
+  }
 
   static async connect(browserURL = "http://127.0.0.1:9222") {
     const browser = await puppeteer.connect({ browserURL });

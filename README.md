@@ -12,6 +12,7 @@ Open source (MIT) agentic browser and coding platform. Bring your own LLM key an
 | `shield` | secret redaction, prompt-injection flags, egress allow/deny, tool guard | unit + integration |
 | `offline` | SQLite full-text page cache, cache-backed navigate and search | unit |
 | `sandbox` | per-task Docker sandbox for any language (`sh`, `write_file`, `read_file`) | node image |
+| `qa` | exploratory testing mode: charter prompt, `check_page` auto-audit, `report_bug`, markdown report | planted-bug site + mock LLM |
 | `gateway` | HTTP + WebSocket API, cron scheduler, run history, ntfy push, human handoff | end to end |
 | `apps/mobile` | Expo app: run tasks, live browser view, tap/type to clear CAPTCHA and 2FA | **not run on a device yet** |
 | `apps/code` | OpenVSCode Server compose file | **not run yet** |
@@ -28,6 +29,9 @@ curl -X PUT localhost:8787/settings -H "authorization: Bearer $TOKEN" -H 'conten
 curl -X POST localhost:8787/runs -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"task":"..."}'
 ```
 Any OpenAI-compatible endpoint works (OpenRouter, Ollama, vLLM). Set `offlineBaseURL` and `offlineModel` (for example Ollama at `http://localhost:11434/v1`) to keep working with no internet. Code tasks: `{"task":"...","mode":"code","language":"rust"}`.
+
+## Exploratory testing
+`{"task":"Test https://example.com A to Z","mode":"qa"}` runs the agent with a QA charter. It maps the site, audits every page (broken images and links, labels, console errors, failed requests, overflow), exercises forms, tries phone and desktop viewports, and writes `~/.aldurion/reports/run-N/report.md` with screenshots. The automated audit is tested; how well a real LLM explores depends on the model you plug in.
 
 ## Security notes
 Shield reduces risk, it cannot guarantee that data never leaks. The gateway binds to 127.0.0.1 by default; put it behind TLS before exposing it. The LLM key is stored in `~/.aldurion/aldurion.db` (mode 0600), not encrypted.
